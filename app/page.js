@@ -111,16 +111,16 @@ export default function Quiz() {
                 ? ['insufficiente', 'sufficiente', 'buono', 'ottimo'] 
                 : ['Si', 'No']
               ).map((opt) => (
-                <button
-                  key={opt}
-                  onClick={() => handleAnswer(opt)}
-                  className="group w-full flex justify-between items-center p-6 bg-white border border-slate-200 rounded-3xl shadow-sm hover:border-blue-500 hover:shadow-md transition-all active:scale-[0.98]"
-                >
-                  <span className="text-xl font-bold text-slate-700 group-hover:text-blue-600 capitalize">{opt}</span>
-                  <div className="text-slate-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all">
-                    <IconChevronRight />
-                  </div>
-                </button>
+              // Cerca il blocco del bottone e mettilo così:
+<button
+  key={opt}
+  onClick={() => handleAnswer(opt)}
+  style={{ borderRadius: '20px' }} // Forza il raggio se Tailwind fallisce
+  className="w-full flex justify-between items-center p-6 bg-white border border-gray-200 shadow-sm hover:border-blue-500 transition-all mb-4"
+>
+  <span className="text-xl font-bold text-gray-700 capitalize">{opt}</span>
+  <span className="text-blue-500">→</span>
+</button>
               ))}
             </div>
 
