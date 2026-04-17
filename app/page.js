@@ -83,7 +83,7 @@ export default function App() {
   if (view === 'home') return (
     <main className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans antialiased">
       <div className="text-center mb-16 animate-in fade-in slide-in-from-top-4 duration-700">
-        <h1 className="text-6xl font-black bg-yellow-500 italic mb-3">Feedback Finale</h1>
+        <h1 className="text-6xl font-black bg-yellow-400 italic mb-3">Feedback Finale</h1>
         <div className="h-1 w-20 bg-blue-600 mx-auto rounded-full mb-4"></div>
         <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">Feedback Portal</p>
       </div>
