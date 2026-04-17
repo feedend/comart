@@ -1,3 +1,4 @@
+import './globals.css'
 export const metadata = {
   title: 'FeedEnd PWA',
   description: 'Sistema di feedback anonimo',
