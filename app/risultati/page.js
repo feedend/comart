@@ -8,89 +8,88 @@ export default function Risultati() {
 
   useEffect(() => {
     async function fetchResults() {
-      // Recuperiamo le risposte con le relative risposte ai singoli quesiti
-      const { data, error } = await supabase
-        .from('responses')
-        .select(`
-          id,
-          created_at,
-          commenti,
-          suggerimenti,
-          answers (
-            answer_value,
-            questions (question_text)
-          )
-        `)
-        .order('created_at', { ascending: false });
+      try {
+        // Query semplificata per evitare errori di JOIN se le FK non sono perfette
+        const { data, error } = await supabase
+          .from('responses')
+          .select(`
+            id,
+            created_at,
+            commenti,
+            suggerimenti,
+            answers (
+              answer_value,
+              question_id
+            )
+          `)
+          .order('created_at', { ascending: false });
 
-      if (error) console.error("Errore caricamento:", error);
-      else setResponses(data);
-      setLoading(false);
+        if (error) throw error;
+        setResponses(data || []);
+      } catch (err) {
+        console.error("Errore recupero dati:", err.message);
+      } finally {
+        setLoading(false);
+      }
     }
     fetchResults();
   }, []);
 
-  if (loading) return <div className="p-10 text-center font-sans">Caricamento dashboard...</div>;
+  if (loading) return <div className="p-10 text-center font-sans animate-pulse text-slate-400">Caricamento dati...</div>;
 
   return (
-    <main className="min-h-screen bg-slate-50 p-4 md:p-10 font-sans">
-      <div className="max-w-6xl mx-auto">
-        <header className="flex justify-between items-center mb-10">
+    <main className="min-h-screen bg-slate-50 p-6 font-sans antialiased">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex justify-between items-end mb-12">
           <div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Dashboard Risultati</h1>
-            <p className="text-slate-500 font-medium">Totale feedback ricevuti: {responses.length}</p>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Report Feedback</h1>
+            <p className="text-slate-500 font-bold uppercase text-xs tracking-widest mt-2">Comart Academy Dashboard</p>
           </div>
           <button 
             onClick={() => window.location.href = '/'}
-            className="bg-white border border-slate-200 px-6 py-2 rounded-full font-bold text-sm shadow-sm hover:bg-slate-50 transition-all"
+            className="bg-white border border-slate-200 px-6 py-3 rounded-2xl font-bold text-sm shadow-sm hover:shadow-md transition-all"
           >
-            ← Torna alla Home
+            ← Home
           </button>
-        </header>
+        </div>
 
         {responses.length === 0 ? (
-          <div className="bg-white p-20 rounded-[3rem] text-center border border-dashed border-slate-300">
-            <p className="text-slate-400 font-bold">Ancora nessun dato disponibile.</p>
+          <div className="bg-white p-20 rounded-[3rem] text-center border-2 border-dashed border-slate-200">
+            <p className="text-slate-400 font-bold">Nessun feedback registrato al momento.</p>
           </div>
         ) : (
-          <div className="grid gap-8">
+          <div className="grid gap-6">
             {responses.map((res) => (
-              <div key={res.id} className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden transition-hover hover:shadow-md">
-                <div className="p-8">
-                  <div className="flex justify-between items-start mb-6">
-                    <span className="bg-blue-50 text-blue-600 px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest">
-                      ID: {res.id.toString().slice(0, 8)}
-                    </span>
-                    <span className="text-slate-400 text-sm font-medium">
-                      {new Date(res.created_at).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
+              <div key={res.id} className="bg-white rounded-[2rem] border border-slate-200 shadow-sm p-8">
+                <div className="flex justify-between items-center mb-6 border-b border-slate-50 pb-4">
+                  <span className="text-xs font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full uppercase">ID: {res.id.toString().slice(0,8)}</span>
+                  <span className="text-slate-400 text-sm font-medium">
+                    {new Date(res.created_at).toLocaleDateString('it-IT')} {new Date(res.created_at).toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'})}
+                  </span>
+                </div>
 
-                  {/* Dettaglio Risposte */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    {res.answers.map((ans, idx) => (
-                      <div key={idx} className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                        <p className="text-xs font-bold text-slate-400 uppercase mb-1">{ans.questions?.question_text || 'Domanda'}</p>
-                        <p className="text-lg font-bold text-slate-800 capitalize">{ans.answer_value}</p>
-                      </div>
-                    ))}
-                  </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+                  {res.answers?.map((ans, idx) => (
+                    <div key={idx} className="bg-slate-50 p-4 rounded-2xl">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Q-{ans.question_id}</p>
+                      <p className="text-md font-black text-slate-700 capitalize">{ans.answer_value}</p>
+                    </div>
+                  ))}
+                </div>
 
-                  {/* Commenti e Suggerimenti */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-100">
-                    <div>
-                      <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-2">Commenti</h4>
-                      <p className="text-slate-700 leading-relaxed italic">
-                        {res.commenti ? `"${res.commenti}"` : <span className="text-slate-300 text-sm">Nessun commento</span>}
-                      </p>
+                <div className="space-y-4 pt-4">
+                  {res.commenti && (
+                    <div className="bg-blue-50/50 p-5 rounded-2xl">
+                      <p className="text-[10px] font-bold text-blue-400 uppercase mb-2 italic">Cosa è piaciuto:</p>
+                      <p className="text-slate-700 leading-relaxed font-medium">"{res.commenti}"</p>
                     </div>
-                    <div>
-                      <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-2">Suggerimenti</h4>
-                      <p className="text-slate-700 leading-relaxed italic">
-                        {res.suggerimenti ? `"${res.suggerimenti}"` : <span className="text-slate-300 text-sm">Nessun suggerimento</span>}
-                      </p>
+                  )}
+                  {res.suggerimenti && (
+                    <div className="bg-amber-50/50 p-5 rounded-2xl">
+                      <p className="text-[10px] font-bold text-amber-500 uppercase mb-2 italic">Cosa migliorare:</p>
+                      <p className="text-slate-700 leading-relaxed font-medium">"{res.suggerimenti}"</p>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             ))}
