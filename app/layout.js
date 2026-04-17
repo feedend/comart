@@ -1,14 +1,15 @@
 import './globals.css'
 
-export const metadata = {
-  title: 'Comart Feedback',
-  description: 'Creato con amore',
-}
-
 export default function RootLayout({ children }) {
   return (
     <html lang="it">
-      <body className="antialiased">{children}</body>
+      <head>
+        {/* Carichiamo Tailwind da CDN come backup estremo */}
+        <script src="https://cdn.tailwindcss.com"></script>
+      </head>
+      <body style={{ margin: 0, padding: 0, backgroundColor: '#f8fafc' }}>
+        {children}
+      </body>
     </html>
   )
 }
