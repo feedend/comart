@@ -112,14 +112,36 @@ export default function Quiz() {
                 : ['Si', 'No']
               ).map((opt) => (
               // Cerca il blocco del bottone e mettilo così:
+{/* Cerca questo pezzo dentro il .map delle opzioni */}
 <button
   key={opt}
   onClick={() => handleAnswer(opt)}
-  style={{ borderRadius: '20px' }} // Forza il raggio se Tailwind fallisce
-  className="w-full flex justify-between items-center p-6 bg-white border border-gray-200 shadow-sm hover:border-blue-500 transition-all mb-4"
+  style={{
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '24px',
+    backgroundColor: 'white',
+    border: '1px solid #e2e8f0',
+    borderRadius: '24px',
+    marginBottom: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  }}
+  onMouseOver={(e) => {
+    e.currentTarget.style.borderColor = '#2563eb';
+    e.currentTarget.style.transform = 'translateY(-2px)';
+  }}
+  onMouseOut={(e) => {
+    e.currentTarget.style.borderColor = '#e2e8f0';
+    e.currentTarget.style.transform = 'translateY(0)';
+  }}
 >
-  <span className="text-xl font-bold text-gray-700 capitalize">{opt}</span>
-  <span className="text-blue-500">→</span>
+  <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1e293b', textTransform: 'capitalize' }}>
+    {opt}
+  </span>
+  <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>→</span>
 </button>
               ))}
             </div>
