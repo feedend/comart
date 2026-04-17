@@ -2,12 +2,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-// Icone semplici in SVG per non dover installare altre librerie
-const IconChevronRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>;
-const IconChevronLeft = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>;
-const IconCheck = () => <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>;
-const IconSend = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>;
-
 export default function Quiz() {
   const [questions, setQuestions] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -18,12 +12,17 @@ export default function Quiz() {
 
   useEffect(() => {
     async function getQuestions() {
-      const { data } = await supabase
-        .from('questions')
-        .select('*')
-        .order('sort_order', { ascending: true });
-      setQuestions(data || []);
-      setLoading(false);
+      try {
+        const { data } = await supabase
+          .from('questions')
+          .select('*')
+          .order('sort_order', { ascending: true });
+        setQuestions(data || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
     }
     getQuestions();
   }, []);
@@ -32,155 +31,98 @@ export default function Quiz() {
     const newAnswers = [...answers];
     newAnswers[currentIndex] = { question_id: questions[currentIndex].id, answer_value: value };
     setAnswers(newAnswers);
-    // Feedback visivo immediato prima di passare alla prossima
-    setTimeout(() => setCurrentIndex(currentIndex + 1), 250);
+    setTimeout(() => setCurrentIndex(currentIndex + 1), 300);
   };
 
   const submitFinal = async () => {
     setLoading(true);
-    const { data: resData, error: resError } = await supabase
-      .from('responses')
-      .insert([{ 
-        course_id: 6, 
-        commenti: commenti.testo, 
-        suggerimenti: commenti.suggerimenti 
-      }])
-      .select();
+    try {
+      const { data: resData, error: resError } = await supabase
+        .from('responses')
+        .insert([{ course_id: 6, commenti: commenti.testo, suggerimenti: commenti.suggerimenti }])
+        .select();
 
-    if (!resError && resData.length > 0) {
-      const finalAnswers = answers.map(ans => ({
-        response_id: resData[0].id,
-        question_id: ans.question_id,
-        answer_value: ans.answer_value
-      }));
-      await supabase.from('answers').insert(finalAnswers);
-      setSent(true);
-    } else {
-      alert("Errore durante l'invio. Riprova.");
+      if (!resError && resData && resData.length > 0) {
+        const finalAnswers = answers.map(ans => ({
+          response_id: resData[0].id,
+          question_id: ans.question_id,
+          answer_value: ans.answer_value
+        }));
+        await supabase.from('answers').insert(finalAnswers);
+        setSent(true);
+      }
+    } catch (err) {
+      alert("Errore invio");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  if (loading && !sent) return (
-    <div className="flex justify-center items-center h-screen bg-slate-50 font-sans text-slate-400">
-      <div className="animate-pulse flex flex-col items-center">
-        <div className="h-12 w-12 bg-blue-100 rounded-full mb-4"></div>
-        Caricamento...
-      </div>
-    </div>
-  );
+  if (loading && !sent) return <div className="p-10 text-center font-sans">Caricamento...</div>;
 
   if (sent) return (
-    <div className="flex flex-col justify-center items-center h-screen p-8 bg-white text-center font-sans animate-in fade-in zoom-in duration-500">
-      <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6">
-        <IconCheck />
-      </div>
-      <h2 className="text-3xl font-black text-slate-800 mb-2">Ottimo lavoro!</h2>
-      <p className="text-slate-500 text-lg max-w-xs">Il tuo feedback è stato inviato. Grazie per aiutarci a migliorare.</p>
-      <button onClick={() => window.location.reload()} className="mt-10 text-blue-600 font-bold hover:underline">Invia un'altra risposta</button>
+    <div className="flex flex-col justify-center items-center h-screen p-6 text-center font-sans">
+      <h2 className="text-3xl font-bold text-gray-800">Grazie!</h2>
+      <p className="text-gray-500 mt-2">Feedback inviato con successo.</p>
     </div>
   );
 
   const isLastStep = currentIndex === questions.length;
-  const progress = (currentIndex / (questions.length + 1)) * 100;
 
   return (
-    <main className="min-h-screen bg-slate-50 flex flex-col font-sans antialiased">
-      {/* Progress Bar */}
-      <div className="fixed top-0 w-full z-20">
-        <div className="h-1.5 bg-slate-200">
-          <div className="h-full bg-blue-600 transition-all duration-500 ease-out" style={{ width: `${progress}%` }} />
-        </div>
-        <div className="bg-white/80 backdrop-blur-md px-6 py-4 flex justify-between items-center border-b border-slate-100">
-          <span className="font-black text-xl tracking-tighter text-blue-600">COMART</span>
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded">
-            {isLastStep ? 'Finale' : `${currentIndex + 1} / ${questions.length}`}
-          </span>
-        </div>
+    <main className="min-h-screen bg-gray-50 font-sans">
+      {/* Barra Progresso */}
+      <div className="h-2 bg-gray-200">
+        <div 
+          className="h-full bg-blue-600 transition-all duration-500" 
+          style={{ width: `${(currentIndex / (questions.length || 1)) * 100}%` }}
+        />
       </div>
 
-      <div className="flex-1 flex flex-col justify-center max-w-xl mx-auto w-full p-6 pt-28">
+      <div className="max-w-xl mx-auto p-6 py-12">
         {!isLastStep ? (
-          <div className="animate-in slide-in-from-right-10 duration-500">
-            <h1 className="text-3xl font-extrabold text-slate-900 leading-tight mb-10">
-              {questions[currentIndex].question_text}
+          <div>
+            <p className="text-blue-600 font-bold mb-2 uppercase text-xs tracking-widest">
+              Domanda {currentIndex + 1} di {questions.length}
+            </p>
+            <h1 className="text-2xl font-extrabold text-gray-900 mb-8 leading-tight">
+              {questions[currentIndex]?.question_text}
             </h1>
 
-            <div className="grid gap-4">
-              {(questions[currentIndex].type === 'valutazione' 
+            <div className="space-y-3">
+              {(questions[currentIndex]?.type === 'valutazione' 
                 ? ['insufficiente', 'sufficiente', 'buono', 'ottimo'] 
                 : ['Si', 'No']
               ).map((opt) => (
-              // Cerca il blocco del bottone e mettilo così:
-{/* Cerca questo pezzo dentro il .map delle opzioni */}
-<button
-  key={opt}
-  onClick={() => handleAnswer(opt)}
-  style={{
-    width: '100%',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '24px',
-    backgroundColor: 'white',
-    border: '1px solid #e2e8f0',
-    borderRadius: '24px',
-    marginBottom: '12px',
-    cursor: 'pointer',
-    transition: 'all 0.2s'
-  }}
-  onMouseOver={(e) => {
-    e.currentTarget.style.borderColor = '#2563eb';
-    e.currentTarget.style.transform = 'translateY(-2px)';
-  }}
-  onMouseOut={(e) => {
-    e.currentTarget.style.borderColor = '#e2e8f0';
-    e.currentTarget.style.transform = 'translateY(0)';
-  }}
->
-  <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1e293b', textTransform: 'capitalize' }}>
-    {opt}
-  </span>
-  <span style={{ color: '#3b82f6', fontWeight: 'bold' }}>→</span>
-</button>
+                <button
+                  key={opt}
+                  onClick={() => handleAnswer(opt)}
+                  className="w-full flex justify-between items-center p-5 bg-white border border-gray-200 rounded-2xl shadow-sm hover:border-blue-500 hover:bg-blue-50 transition-all active:scale-95"
+                >
+                  <span className="text-lg font-bold text-gray-700 capitalize">{opt}</span>
+                  <span className="text-blue-500">→</span>
+                </button>
               ))}
             </div>
-
-            {currentIndex > 0 && (
-              <button 
-                onClick={() => setCurrentIndex(currentIndex - 1)}
-                className="mt-10 flex items-center gap-1 text-slate-400 font-bold text-sm hover:text-slate-600 transition-colors"
-              >
-                <IconChevronLeft /> INDIETRO
-              </button>
-            )}
           </div>
         ) : (
-          <div className="animate-in fade-in duration-700 space-y-8">
-            <div className="mb-4">
-              <h2 className="text-4xl font-black text-slate-900">Quasi finito.</h2>
-              <p className="text-slate-500 mt-2 text-lg">Hai qualche consiglio per noi?</p>
-            </div>
-            
-            <div className="space-y-4">
-              <textarea 
-                placeholder="Cosa ti è piaciuto?" 
-                className="w-full p-6 bg-white border border-slate-200 rounded-[2rem] focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none h-32 transition-all"
-                onChange={(e) => setCommenti({...commenti, testo: e.target.value})}
-              />
-              <textarea 
-                placeholder="Cosa possiamo migliorare?" 
-                className="w-full p-6 bg-white border border-slate-200 rounded-[2rem] focus:ring-4 focus:ring-blue-50 focus:border-blue-500 outline-none h-32 transition-all"
-                onChange={(e) => setCommenti({...commenti, suggerimenti: e.target.value})}
-              />
-            </div>
-
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Ci siamo quasi!</h2>
+            <textarea 
+              placeholder="Commenti..." 
+              className="w-full p-4 border border-gray-200 rounded-2xl h-32 outline-none focus:border-blue-500 shadow-sm"
+              onChange={(e) => setCommenti({...commenti, testo: e.target.value})}
+            />
+            <textarea 
+              placeholder="Suggerimenti..." 
+              className="w-full p-4 border border-gray-200 rounded-2xl h-32 outline-none focus:border-blue-500 shadow-sm"
+              onChange={(e) => setCommenti({...commenti, suggerimenti: e.target.value})}
+            />
             <button 
               onClick={submitFinal}
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-6 rounded-[2rem] font-black text-xl shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-3 disabled:bg-slate-300"
+              className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:bg-blue-700 transition-all"
             >
-              {loading ? "INVIO IN CORSO..." : <><IconSend /> INVIA ORA</>}
+              Invia Feedback
             </button>
           </div>
         )}
