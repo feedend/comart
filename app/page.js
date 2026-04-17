@@ -83,7 +83,7 @@ export default function App() {
   if (view === 'home') return (
     <main className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 font-sans antialiased">
       <div className="text-center mb-16 animate-in fade-in slide-in-from-top-4 duration-700">
-        <h1 className="text-6xl font-black text-blue-600 tracking-tighter italic mb-3">COMART</h1>
+        <h1 className="text-6xl font-black bg-yellow-400 tracking-tighter italic mb-3">Feedback Finale</h1>
         <div className="h-1 w-20 bg-blue-600 mx-auto rounded-full mb-4"></div>
         <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">Feedback Management Portal</p>
       </div>
@@ -207,7 +207,7 @@ export default function App() {
     <div className="flex flex-col justify-center items-center h-screen p-8 text-center bg-white font-sans animate-in zoom-in duration-500">
       <div className="w-24 h-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-8 text-5xl shadow-inner">✓</div>
       <h2 className="text-5xl font-black text-slate-900 mb-4 tracking-tighter">Grazie!</h2>
-      <p className="text-slate-500 text-xl mb-12 max-w-xs">Il tuo contributo è prezioso per la Comart Academy.</p>
+      <p className="text-slate-500 text-xl mb-12 max-w-xs">Il tuo contributo è prezioso per noi.</p>
       <button 
         onClick={() => {
           setAnswers([]);
