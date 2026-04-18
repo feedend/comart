@@ -16,6 +16,30 @@ export default function AdminDashboard() {
   const [newQuestion, setNewQuestion] = useState({ question_text: '', type: 'valutazione', sort_order: 1 });
   const [newCourse, setNewCourse] = useState('');
 
+// ... dentro function AdminDashboard() {
+const [authorized, setAuthorized] = useState(false);
+const router = useRouter(); // Assicurati di importare useRouter da 'next/navigation'
+
+useEffect(() => {
+  const auth = localStorage.getItem('admin_auth');
+  if (auth !== 'true') {
+    window.location.href = '/login'; // Reindirizza se non autorizzato
+  } else {
+    setAuthorized(true);
+    loadData();
+  }
+}, [tab, filterCourse]);
+
+// Aggiungi anche una funzione di Logout nell'Header
+const handleLogout = () => {
+  localStorage.removeItem('admin_auth');
+  window.location.href = '/';
+};
+
+// Modifica il return iniziale per gestire l'attesa del controllo
+if (!authorized) return <div className="h-screen bg-slate-50 flex items-center justify-center font-black uppercase text-xs tracking-widest text-slate-400">Verifica autorizzazione...</div>;
+// ...
+  
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setSiteUrl(window.location.origin);
