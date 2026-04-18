@@ -137,7 +137,9 @@ if (!authorized) return <div className="h-screen bg-slate-50 flex items-center j
           <div className="flex justify-between items-center">
             <h1 className="text-xl font-black text-blue-600 tracking-tighter italic">COMART DASHBOARD</h1>
             <div className="flex gap-2">
-               <button onClick={() => window.location.href='/'} className="bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter">Torna Indietro</button>
+              <button 
+  onClick={handleLogout} 
+  className="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter hover:bg-red-500 hover:text-white transition-colors">Esci</button>
                <button onClick={() => window.print()} className="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest">PDF</button>
             </div>
           </div>
