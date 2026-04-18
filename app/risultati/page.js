@@ -1,10 +1,12 @@
 "use client";
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation'; // Importato correttamente per Next.js
 import { supabase } from '../../lib/supabase';
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState('report');
   const [loading, setLoading] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [courses, setCourses] = useState([]);
   const [stats, setStats] = useState([]);
@@ -12,41 +14,27 @@ export default function AdminDashboard() {
   const [filterCourse, setFilterCourse] = useState('all');
   const [siteUrl, setSiteUrl] = useState('');
 
+  const router = useRouter();
+
   // Stati per nuovi inserimenti
   const [newQuestion, setNewQuestion] = useState({ question_text: '', type: 'valutazione', sort_order: 1 });
   const [newCourse, setNewCourse] = useState('');
 
-// ... dentro function AdminDashboard() {
-const [authorized, setAuthorized] = useState(false);
-const router = useRouter(); // Assicurati di importare useRouter da 'next/navigation'
-
-useEffect(() => {
-  const auth = localStorage.getItem('admin_auth');
-  if (auth !== 'true') {
-    window.location.href = '/login'; // Reindirizza se non autorizzato
-  } else {
-    setAuthorized(true);
-    loadData();
-  }
-}, [tab, filterCourse]);
-
-// Aggiungi anche una funzione di Logout nell'Header
-const handleLogout = () => {
-  localStorage.removeItem('admin_auth');
-  window.location.href = '/';
-};
-
-// Modifica il return iniziale per gestire l'attesa del controllo
-if (!authorized) return <div className="h-screen bg-slate-50 flex items-center justify-center font-black uppercase text-xs tracking-widest text-slate-400">Verifica autorizzazione...</div>;
-// ...
-  
+  // 1. Controllo Autorizzazione e inizializzazione URL
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setSiteUrl(window.location.origin);
+    const auth = localStorage.getItem('admin_auth');
+    if (auth !== 'true') {
+      router.push('/login');
+    } else {
+      setAuthorized(true);
+      if (typeof window !== 'undefined') {
+        setSiteUrl(window.location.origin);
+      }
+      loadData();
     }
-    loadData();
-  }, [tab, filterCourse]);
+  }, [tab, filterCourse, router]);
 
+  // 2. Funzione Caricamento Dati
   async function loadData() {
     setLoading(true);
     try {
@@ -69,7 +57,7 @@ if (!authorized) return <div className="h-screen bg-slate-50 flex items-center j
         rData = rData.filter(r => String(r.course_id) === String(filterCourse));
       }
 
-      // 1. STATISTICHE (Una riga per domanda con distribuzione percentuali)
+      // Calcolo Statistiche Analitiche
       const calculatedStats = qData.map(q => {
         const relatedAns = aData.filter(a => a.question_id === q.id && rData.some(r => r.id === a.response_id));
         const total = relatedAns.length;
@@ -89,7 +77,7 @@ if (!authorized) return <div className="h-screen bg-slate-50 flex items-center j
       });
       setStats(calculatedStats);
 
-      // 2. FEEDBACK TESTUALI (Commenti e Suggerimenti)
+      // Feedback Testuali
       const textFeeds = rData.map(r => ({
         id: r.id,
         course: cData.find(c => c.id === r.course_id)?.name || 'N/D',
@@ -124,10 +112,16 @@ if (!authorized) return <div className="h-screen bg-slate-50 flex items-center j
     loadData();
   };
 
-  // Generazione URL QR Code
+  const handleLogout = () => {
+    localStorage.removeItem('admin_auth');
+    router.push('/');
+  };
+
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(siteUrl)}`;
 
-  if (loading) return <div className="h-screen flex items-center justify-center font-black text-blue-600 bg-slate-50 uppercase tracking-widest p-10 text-center">Analisi Dati Comart...</div>;
+  // Rendering condizionale per protezione e caricamento
+  if (!authorized) return <div className="h-screen bg-slate-50 flex items-center justify-center font-black uppercase text-[10px] tracking-widest text-slate-400">Verifica Accesso...</div>;
+  if (loading) return <div className="h-screen bg-slate-50 flex items-center justify-center font-black text-blue-600 uppercase tracking-widest p-10 text-center">Analisi Dati Comart...</div>;
 
   return (
     <main className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20">
@@ -137,9 +131,7 @@ if (!authorized) return <div className="h-screen bg-slate-50 flex items-center j
           <div className="flex justify-between items-center">
             <h1 className="text-xl font-black text-blue-600 tracking-tighter italic">COMART DASHBOARD</h1>
             <div className="flex gap-2">
-              <button 
-  onClick={handleLogout} 
-  className="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter hover:bg-red-500 hover:text-white transition-colors">Esci</button>
+               <button onClick={handleLogout} className="bg-red-50 text-red-500 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter hover:bg-red-500 hover:text-white transition-colors">Esci</button>
                <button onClick={() => window.print()} className="bg-slate-900 text-white px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest">PDF</button>
             </div>
           </div>
@@ -155,7 +147,6 @@ if (!authorized) return <div className="h-screen bg-slate-50 flex items-center j
 
       <div className="p-4 max-w-5xl mx-auto mt-4">
         
-        {/* VIEW: REPORT (STATISTICHE) */}
         {tab === 'report' && (
           <div className="space-y-8">
             <div className="bg-white p-5 rounded-3xl border shadow-sm print:hidden">
@@ -177,7 +168,6 @@ if (!authorized) return <div className="h-screen bg-slate-50 flex items-center j
                     </div>
                     <span className="text-xl font-black text-slate-200">#{s.total}</span>
                   </div>
-
                   <div className="space-y-3">
                     {s.type === 'valutazione' ? 
                       ['ottimo', 'buono', 'sufficiente', 'insufficiente'].map(label => (
@@ -222,7 +212,6 @@ if (!authorized) return <div className="h-screen bg-slate-50 flex items-center j
           </div>
         )}
 
-        {/* VIEW: QR CODE */}
         {tab === 'accesso' && (
           <div className="flex flex-col items-center justify-center p-8 bg-white rounded-[3rem] border shadow-sm text-center animate-in zoom-in-95 duration-300 max-w-md mx-auto">
             <h2 className="text-2xl font-black mb-2 uppercase italic text-blue-600">QR CODE</h2>
@@ -230,12 +219,11 @@ if (!authorized) return <div className="h-screen bg-slate-50 flex items-center j
             <div className="p-4 bg-white rounded-[2rem] border-8 border-slate-50 shadow-inner mb-8">
               <img src={qrImageUrl} alt="QR Code" className="w-64 h-64" />
             </div>
-            <a href={qrImageUrl} target="_blank" rel="noopener noreferrer" className="w-full bg-blue-600 text-white p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-blue-100">Apri / Scarica QR</a>
+            <a href={qrImageUrl} target="_blank" rel="noopener noreferrer" className="w-full bg-blue-600 text-white p-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-blue-100 text-center">Apri / Scarica QR</a>
             <p className="mt-4 text-[8px] text-slate-300 font-bold uppercase">{siteUrl}</p>
           </div>
         )}
 
-        {/* VIEW: GESTIONE DOMANDE */}
         {tab === 'domande' && (
           <div className="bg-white rounded-[2.5rem] p-6 border shadow-sm max-w-xl mx-auto">
             <h2 className="text-xl font-black mb-6 uppercase italic text-center text-blue-600 tracking-tighter">Domande Questionario</h2>
@@ -264,7 +252,6 @@ if (!authorized) return <div className="h-screen bg-slate-50 flex items-center j
           </div>
         )}
 
-        {/* VIEW: GESTIONE CORSI */}
         {tab === 'corsi' && (
           <div className="bg-white rounded-[2.5rem] p-6 border shadow-sm max-w-xl mx-auto">
             <h2 className="text-xl font-black mb-6 uppercase italic text-center text-blue-600 tracking-tighter">Archivio Corsi</h2>
