@@ -124,7 +124,7 @@ export default function App() {
         </button>
       </div>
       
-      <p className="mt-16 text-slate-400 text-xs font-bold uppercase tracking-widest">© 2026 MaDa</p>
+      <p className="mt-16 text-slate-400 text-xs font-bold uppercase tracking-widest">© 2026 DaMa</p>
     </main>
   );
 
